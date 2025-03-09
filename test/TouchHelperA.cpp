@@ -44,6 +44,8 @@ namespace Touch {
 
     static bool otherTouch = false;
 
+    static bool isUp = false;
+
     static std::function<void(std::vector<Device> *)> callback;
 
     static spinlock lock;
@@ -225,6 +227,19 @@ namespace Touch {
                             auto pos = Touch2Screen(device.Finger[latest].pos);
                             io.MousePos = ImVec2(pos.x, pos.y);
                             io.MouseDown[0] = true;
+                            if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) { //判断点击是否在悬浮窗内
+                                if (!isUp) { //是否第一次点击
+                                    UpAll(); //抬起手指
+                                    ioctl(device.fd, EVIOCGRAB, 1); //设置触摸事件只能被当前进程接收
+                                    isUp= true; 
+                                }
+
+                            }else{ //点击在悬浮窗外
+                                if(isUp) { 判断是否点击过悬浮窗
+                                    ioctl(device.fd, EVIOCGRAB, 0); //设备触摸事件让其他设备接受
+                                    isUp = false;
+                                }
+                            }
                         } else {
                             io.MouseDown[0] = false;
                         }
@@ -480,6 +495,33 @@ namespace Touch {
         touch.isDown = false;
         Upload();
         lock.unlock();
+    }
+
+    void UpAll() {
+        struct input_event events[5];
+        memset(events, 0, sizeof(events));
+
+        events[0].type = EV_ABS;
+        events[0].code = ABS_MT_SLOT;
+        events[0].value = 0;
+
+        events[1].type = EV_ABS;
+        events[1].code = ABS_MT_TRACKING_ID;
+        events[1].value = 0xffffffff;
+
+        events[2].type = EV_KEY;
+        events[2].code = BTN_TOUCH;
+        events[2].value = 0;
+
+        events[3].type = EV_KEY;
+        events[3].code = BTN_TOOL_FINGER;
+        events[3].value = 0;
+
+        events[4].type = EV_SYN;
+        events[4].code = SYN_REPORT;
+        events[4].value = 0;
+
+        write(devices[0].fd, events, sizeof(events));
     }
 
     void SetCallBack(const std::function<void(std::vector<Device> *)> &cb) {
