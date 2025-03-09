@@ -31,6 +31,8 @@ namespace Touch {
     void Move(float x, float y);
 
     void Up();
+    
+    void UpAll();
 
     void Move(touchObj *touch, float x, float y);
 
