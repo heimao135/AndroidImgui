@@ -1,5 +1,7 @@
 # AndroidImgui
 
+简单弄了一下悬浮窗点击穿透问题
+
 #### 介绍
 
 [Dear ImGui](https://github.com/ocornut/imgui.git)以`opengles`和`vulkan`为后端在android平台上的封装，支持加载图片纹理等，两个后端可以无缝切换，可以开箱即用
